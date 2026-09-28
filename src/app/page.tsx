@@ -39,9 +39,12 @@ export default function Home() {
   const [isAddDeviceOpen, setIsAddDeviceOpen] = useState<boolean>(false);
   const [isMakassarModalOpen, setIsMakassarModalOpen] = useState<boolean>(false);
 
-  // Status Live Network Makassar
+  // Status Live Network Makassar & Telemetry
   const [isLiveMakassar, setIsLiveMakassar] = useState<boolean>(false);
   const [isLoadingLive, setIsLoadingLive] = useState<boolean>(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [activeRouterIp, setActiveRouterIp] = useState<string>('192.168.0.1');
+  const [localPcIp, setLocalPcIp] = useState<string>('192.168.0.243');
 
   // Live telemetry streaming history state
   const [historyData, setHistoryData] = useState<
@@ -66,36 +69,100 @@ export default function Home() {
   };
 
   // Muat Data Live Jaringan Makassar dari Router Tenda / ARP Scanner
-  const handleLoadMakassarLive = async () => {
-    setIsLoadingLive(true);
-    audioHUD.playClick();
+  const handleLoadMakassarLive = async (silent = false) => {
+    if (!silent) {
+      setIsLoadingLive(true);
+      audioHUD.playClick();
+    }
     try {
       const res = await fetch('/api/tenda');
       const data = await res.json();
       if (data.success && data.devices && data.devices.length > 0) {
-        setDevices(data.devices);
+        if (data.routerIp) setActiveRouterIp(data.routerIp);
+        if (data.localIp) setLocalPcIp(data.localIp);
+
+        setDevices((prevDevices) => {
+          // Merge live devices with existing device states to preserve user toggles
+          return data.devices.map((newDev: NetworkDevice) => {
+            const existing = prevDevices.find((p) => p.id === newDev.id || p.ip === newDev.ip);
+            if (existing) {
+              return {
+                ...newDev,
+                isQosPrioritized: existing.isQosPrioritized,
+                isThrottled: existing.isThrottled,
+                isBlocked: existing.isBlocked,
+                maxMbpsLimit: existing.maxMbpsLimit,
+                downloadMbps: existing.isBlocked ? 0 : existing.isThrottled ? Math.min(newDev.downloadMbps, 9.5) : newDev.downloadMbps,
+                uploadMbps: existing.isBlocked ? 0 : newDev.uploadMbps,
+                status: existing.isBlocked ? 'OFFLINE' : newDev.status,
+              };
+            }
+            return newDev;
+          });
+        });
+
         setIsLiveMakassar(true);
-        audioHUD.playSuccess();
-        setAlerts((prev) => [
-          {
-            id: `alert-makassar-${Date.now()}`,
-            deviceId: data.devices[0].id,
-            deviceName: 'Router Tenda Makassar',
-            severity: 'INFO',
-            message: `Mode Live Makassar Aktif! Terhubung ke Gateway 192.168.0.1 (${data.dataSource})`,
-            metric: '192.168.0.1 (Tenda)',
-            timestamp: new Date().toLocaleTimeString('id-ID'),
-            resolved: false,
-          },
-          ...prev,
-        ]);
+        setLastSyncTime(new Date().toLocaleTimeString('id-ID'));
+        
+        if (!silent) {
+          audioHUD.playSuccess();
+          setAlerts((prev) => [
+            {
+              id: `alert-makassar-${Date.now()}`,
+              deviceId: data.devices[0].id,
+              deviceName: 'Router Tenda Makassar',
+              severity: 'INFO',
+              message: `Realtime Sync Aktif! Terhubung ke Gateway ${data.routerIp} (${data.dataSource}) - ${data.devices.length} Perangkat Terdeteksi`,
+              metric: `${data.routerIp} (Tenda)`,
+              timestamp: new Date().toLocaleTimeString('id-ID'),
+              resolved: false,
+            },
+            ...prev,
+          ]);
+        }
       }
     } catch (err) {
       console.error('Failed to load Makassar live network:', err);
     } finally {
-      setIsLoadingLive(false);
+      if (!silent) setIsLoadingLive(false);
     }
   };
+
+  // Auto-detect connected Makassar Wi-Fi on initial mount & periodic real-time sync
+  useEffect(() => {
+    let isMounted = true;
+
+    // Initial check on mount
+    const initCheck = async () => {
+      try {
+        const res = await fetch('/api/tenda');
+        const data = await res.json();
+        if (isMounted && data.success && data.devices && data.devices.length > 0) {
+          if (data.routerIp) setActiveRouterIp(data.routerIp);
+          if (data.localIp) setLocalPcIp(data.localIp);
+          setDevices(data.devices);
+          setIsLiveMakassar(true);
+          setLastSyncTime(new Date().toLocaleTimeString('id-ID'));
+        }
+      } catch {
+        // Fallback to simulation if offline
+      }
+    };
+
+    initCheck();
+
+    // Auto-polling live devices every 4 seconds when in Live Makassar mode
+    const liveInterval = setInterval(() => {
+      if (isLiveMakassar) {
+        handleLoadMakassarLive(true);
+      }
+    }, 4000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(liveInterval);
+    };
+  }, [isLiveMakassar]);
 
   const handleResetToSimulation = () => {
     audioHUD.playClick();
@@ -105,35 +172,36 @@ export default function Home() {
 
   // Real-time telemetry tick loop
   useEffect(() => {
-    if (!isSimulating) return;
+    if (!isSimulating && !isLiveMakassar) return;
 
     const interval = setInterval(() => {
-      setDevices((prevDevices) => {
-        return prevDevices.map((d) => {
-          if (d.status === 'OFFLINE' || d.isBlocked) return d;
+      if (!isLiveMakassar) {
+        setDevices((prevDevices) => {
+          return prevDevices.map((d) => {
+            if (d.status === 'OFFLINE' || d.isBlocked) return d;
 
-          let deltaDown = (Math.random() - 0.5) * 3;
-          let deltaUp = (Math.random() - 0.5) * 1.5;
-          let deltaPing = (Math.random() - 0.5) * 2;
+            let deltaDown = (Math.random() - 0.5) * 3;
+            let deltaUp = (Math.random() - 0.5) * 1.5;
+            let deltaPing = (Math.random() - 0.5) * 2;
 
-          // If throttled, cap download
-          let targetDown = Math.max(1, d.downloadMbps + deltaDown);
-          if (d.isThrottled && targetDown > 10) {
-            targetDown = 9.5;
-          }
+            let targetDown = Math.max(1, d.downloadMbps + deltaDown);
+            if (d.isThrottled && targetDown > 10) {
+              targetDown = 9.5;
+            }
 
-          let targetPing = Math.max(2, Math.round(d.pingMs + deltaPing));
+            let targetPing = Math.max(2, Math.round(d.pingMs + deltaPing));
 
-          return {
-            ...d,
-            downloadMbps: +targetDown.toFixed(1),
-            uploadMbps: +Math.max(0.5, d.uploadMbps + deltaUp).toFixed(1),
-            pingMs: targetPing,
-          };
+            return {
+              ...d,
+              downloadMbps: +targetDown.toFixed(1),
+              uploadMbps: +Math.max(0.5, d.uploadMbps + deltaUp).toFixed(1),
+              pingMs: targetPing,
+            };
+          });
         });
-      });
+      }
 
-      // Update streaming history
+      // Update streaming history chart
       const nowTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setHistoryData((prev) => {
         const totalDown = devices.reduce((s, dev) => s + dev.downloadMbps, 0);
@@ -150,12 +218,12 @@ export default function Home() {
     }, 2500);
 
     return () => clearInterval(interval);
-  }, [isSimulating, devices]);
+  }, [isSimulating, isLiveMakassar, devices]);
 
   // Keep selected device synced with updated device state
   useEffect(() => {
     if (selectedDevice) {
-      const latest = devices.find((d) => d.id === selectedDevice.id);
+      const latest = devices.find((d) => d.id === selectedDevice.id || d.ip === selectedDevice.ip);
       if (latest) setSelectedDevice(latest);
     }
   }, [devices, selectedDevice]);
@@ -245,21 +313,29 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black text-lime-400 tracking-wide">
-                  PENGUJIAN LOKASI MAKASSAR
+                  MONITORING REALTIME MAKASSAR
                 </span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold ${
+                <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold flex items-center gap-1 ${
                   isLiveMakassar 
                     ? 'bg-lime-400 text-black animate-pulse' 
                     : 'bg-yellow-400 text-black'
                 }`}>
-                  {isLiveMakassar ? 'LIVE TENDA ROUTER AKTIF' : 'MODE SIMULASI LAB'}
+                  <Radio className="w-3 h-3" />
+                  {isLiveMakassar ? 'REALTIME WI-FI LIVE' : 'MODE SIMULASI LAB'}
                 </span>
+                {lastSyncTime && isLiveMakassar && (
+                  <span className="text-[10px] text-cyan-300 font-bold bg-black px-2 py-0.5 rounded border border-cyan-500">
+                    Sync: {lastSyncTime}
+                  </span>
+                )}
               </div>
               <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                 <Wifi className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Wi-Fi: <strong className="text-white">www.tendawifi.com (192.168.0.1)</strong></span>
+                <span>Wi-Fi Gateway: <strong className="text-white">{activeRouterIp} (Tenda)</strong></span>
                 <span className="text-slate-600">•</span>
-                <span>PC: <strong className="text-yellow-300">192.168.0.243</strong></span>
+                <span>Laptop/PC: <strong className="text-yellow-300">{localPcIp}</strong></span>
+                <span className="text-slate-600">•</span>
+                <span>Terdeteksi: <strong className="text-lime-400 font-black">{devices.length} Device</strong></span>
               </div>
             </div>
           </div>
@@ -276,12 +352,12 @@ export default function Home() {
             ) : null}
 
             <button
-              onClick={handleLoadMakassarLive}
+              onClick={() => handleLoadMakassarLive(false)}
               disabled={isLoadingLive}
               className="maxi-btn px-3.5 py-1.5 rounded-xl bg-lime-400 text-black hover:bg-lime-300 text-xs font-black flex items-center gap-1.5 disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoadingLive ? 'animate-spin' : ''}`} />
-              <span>{isLoadingLive ? 'Memindai...' : isLiveMakassar ? 'Segarkan Data Live' : 'Muat Data Riil Makassar'}</span>
+              <span>{isLoadingLive ? 'Memindai...' : isLiveMakassar ? 'Segarkan Live (4s)' : 'Muat Data Riil Makassar'}</span>
             </button>
 
             <button

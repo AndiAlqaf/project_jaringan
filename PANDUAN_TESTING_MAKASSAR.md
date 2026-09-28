@@ -54,20 +54,30 @@ Anggota tim di Makassar cukup menjalankan proyek ini di laptopnya sendiri saat t
 
 Jika tim di **Surabaya** ingin bisa mengakses data Router Tenda di Makassar secara langsung dari jarak jauh lewat internet:
 
-### **Opsi A: Menggunakan Ngrok (Tanpa Setting Router)**
-1. Anggota tim di Makassar menginstall **Ngrok** (gratis di [ngrok.com](https://ngrok.com)).
-2. Di laptop Makassar (saat `npm run dev` aktif), ketik di terminal:
-   ```bash
-   ngrok http 3000
-   ```
-3. Ngrok akan memberikan URL Publik (Contoh: `https://abcd-123.ngrok-free.app`).
-4. Anggota tim di Makassar mengirimkan URL tersebut ke tim di **Surabaya**.
-5. Tim di Surabaya dapat membuka URL Ngrok tersebut di browser Surabaya dan melihat monitoring Wi-Fi kantor Makassar secara **Real-time dari jarak jauh**!
+### **PENA NGAN ERROR "503 - Tunnel Unavailable" (Localtunnel / loca.lt)**
+Jika muncul error **503 - Tunnel Unavailable** saat mengakses URL `loca.lt`:
+1. **Penyebab**: Server `npm run dev` di laptop Makassar terhenti / mati, atau koneksi localtunnel terputus.
+2. **Solusi 1 (Localtunnel Bypass)**:
+   - Pastikan di laptop Makassar `npm run dev` di port 3000 **masih aktif berjalan**.
+   - Buka terminal baru di Makassar dan jalankan:
+     ```bash
+     npx localtunnel --port 3000
+     ```
+   - Catat IP Publik laptop Makassar (bisa dicek di [ipv4.icanhazip.com](https://ipv4.icanhazip.com)).
+   - Saat membuka URL `loca.lt` di Surabaya pertama kali, masukkan IP Publik tersebut jika diminta untuk membuka akses tunnel.
 
-### **Opsi B: Menggunakan Tailscale / Mesh Network**
-1. Anggota tim Surabaya & Makassar menginstall aplikasi gratis **Tailscale** di laptop masing-masing.
-2. Kedua laptop dihubungkan dalam satu jaringan virtual private Tailscale.
-3. Tim di Surabaya bisa mengakses `http://[IP-Tailscale-Makassar]:3000` kapan saja!
+3. **Solusi 2 (ALTERNATIF PALING STABIL TANPA ERROR 503: Cloudflare / Ngrok)**:
+   - **Pakai Cloudflare Tunnel (Tanpa Login / Tanpa Akun)**:
+     Di terminal laptop Makassar, ketik:
+     ```bash
+     npx cloudflared tunnel --url http://localhost:3000
+     ```
+     *(Akan menghasilkan URL HTTPS gratis yang 100% stabil tanpa error 503).*
+
+   - **Pakai Ngrok**:
+     ```bash
+     npx ngrok http 3000
+     ```
 
 ---
 

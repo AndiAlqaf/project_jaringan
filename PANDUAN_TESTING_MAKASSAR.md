@@ -49,11 +49,12 @@ npx -y cloudflared tunnel --url http://localhost:3000
 - Cloudflare akan langsung memberikan URL publik resmi berakhiran `.trycloudflare.com`.
 - **Kelebihan:** Tim di Surabaya tinggal klik link tersebut dan dashboard **langsung terbuka** (tanpa perlu mengisi password IP, tanpa akun, dan koneksi HTTPS aman).
 
-### **Opsi B: Menggunakan LocalTunnel**
+### **Opsi B: Menggunakan LocalTunnel & Penanganan Error 503**
 ```bash
 npx -y localtunnel --port 3000
 ```
-*(Catatan: Jika memakai LocalTunnel, saat pertama kali dibuka akan meminta Tunnel Password, yaitu IP Publik Makassar: `125.162.211.76`).*
+- Jika diminta **Tunnel Password**, masukkan IP Publik Makassar: `125.162.211.76` (atau cek di [ipv4.icanhazip.com](https://ipv4.icanhazip.com)).
+- Jika muncul error **503 - Tunnel Unavailable**, pastikan `npm run dev` di laptop Makassar masih aktif, atau beralih ke Opsi A (Cloudflare Tunnel).
 
 ### **Opsi C: Menggunakan Ngrok via NPX**
 ```bash

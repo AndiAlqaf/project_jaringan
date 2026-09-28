@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-maximal: #080613;
+    --maxi-purple: #8b5cf6;
+    --maxi-pink: #ec4899;
+    --maxi-lime: #a3e635;
+    --maxi-cyan: #06b6d4;
+    --maxi-yellow: #facc15;
+    --maxi-orange: #f97316;
+  }
+
+  body {
+    background-color: var(--bg-maximal);
+    color: #f8fafc;
+    font-family: var(--font-space-grotesk), var(--font-syne), system-ui, sans-serif;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-syne), var(--font-orbitron), sans-serif;
+  }
+}
+
+/* Maximalist Grid & Background Pattern */
+.maxi-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(236, 72, 153, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(163, 230, 53, 0.08) 1px, transparent 1px);
+}
+
+.maxi-dots {
+  background-image: radial-gradient(rgba(163, 230, 53, 0.25) 1.5px, transparent 0);
+  background-size: 20px 20px;
+}
+
+.maxi-stripes {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(236, 72, 153, 0.15),
+    rgba(236, 72, 153, 0.15) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+}
+
+/* Maximalist Card & Box Containers with Bold Offset Shadows */
+.maxi-card {
+  background: rgba(17, 14, 33, 0.9);
+  border: 2.5px solid #2e2654;
+  box-shadow: 6px 6px 0px #0d0a1f, 6px 6px 0px 2.5px rgba(236, 72, 153, 0.4);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.maxi-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px #0d0a1f, 8px 8px 0px 2.5px rgba(163, 230, 53, 0.6);
+}
+
+.maxi-card-pink {
+  background: rgba(36, 12, 33, 0.95);
+  border: 2.5px solid #ec4899;
+  box-shadow: 6px 6px 0px #000, 6px 6px 0px 2.5px #f43f5e;
+}
+
+.maxi-card-lime {
+  background: rgba(22, 33, 14, 0.95);
+  border: 2.5px solid #a3e635;
+  box-shadow: 6px 6px 0px #000, 6px 6px 0px 2.5px #84cc16;
+}
+
+.maxi-card-cyan {
+  background: rgba(12, 30, 36, 0.95);
+  border: 2.5px solid #06b6d4;
+  box-shadow: 6px 6px 0px #000, 6px 6px 0px 2.5px #0284c7;
+}
+
+.maxi-card-yellow {
+  background: rgba(36, 32, 12, 0.95);
+  border: 2.5px solid #facc15;
+  box-shadow: 6px 6px 0px #000, 6px 6px 0px 2.5px #eab308;
+}
+
+/* Bold Neo-Brutalist Buttons */
+.maxi-btn {
+  font-family: var(--font-syne), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 2.5px solid #000;
+  box-shadow: 4px 4px 0px #000;
+  transition: all 0.15s ease-in-out;
+}
+
+.maxi-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #000;
+}
+
+.maxi-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px #000;
+}
+
+/* Sticker / Badge Effect */
+.maxi-sticker {
+  display: inline-block;
+  padding: 4px 10px;
+  font-family: var(--font-syne), sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+  border: 2px solid #000;
+  box-shadow: 3px 3px 0px #000;
+  transform: rotate(-1.5deg);
+}
+
+.maxi-sticker-alt {
+  transform: rotate(1.5deg);
+}
+
+/* Text Gradients */
+.text-gradient-rainbow {
+  background: linear-gradient(135deg, #a3e635 0%, #06b6d4 33%, #ec4899 66%, #facc15 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-pink {
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #f472b6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-lime {
+  background: linear-gradient(135deg, #bef264 0%, #a3e635 50%, #4ade80 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Marquee News Ticker Animation */
+@keyframes marquee-scroll {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: 200%;
+  animation: marquee-scroll 22s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Scanline Option */
+.scanline {
+  position: relative;
+}
+.scanline::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(236, 72, 153, 0.04) 50%);
+  background-size: 100% 4px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(12, 8, 29, 0.6);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb {
+  background: #ec4899;
+  border-radius: 9999px;
+  border: 1px solid #000;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a3e635;
+}

@@ -118,7 +118,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           <div className="h-4 w-0.5 bg-slate-700" />
           <div className="flex items-center gap-1.5 text-cyan-300">
             <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-            <span>ROUTER: <strong className="text-white">192.168.1.1</strong></span>
+            <span>ROUTER: <strong className="text-white">192.168.0.1 (Tenda)</strong></span>
           </div>
           <div className="h-4 w-0.5 bg-slate-700 hidden md:block" />
           <div className="hidden md:flex items-center gap-1.5 text-pink-300">

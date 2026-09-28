@@ -11,6 +11,17 @@ import { AlertsPanel } from '../components/AlertsPanel';
 import { NetworkDiagnosticsModal } from '../components/NetworkDiagnosticsModal';
 import { DeviceDetailDrawer } from '../components/DeviceDetailDrawer';
 import { AddDeviceModal } from '../components/AddDeviceModal';
+import { MakassarTestingModal } from '../components/MakassarTestingModal';
+
+import { 
+  MapPin, 
+  RefreshCw, 
+  Wifi, 
+  Radio, 
+  Share2, 
+  Sparkles, 
+  RotateCcw 
+} from 'lucide-react';
 
 import { NetworkDevice, NetworkAlert, SimulationPreset } from '../types/network';
 import { INITIAL_DEVICES, INITIAL_ALERTS, applySimulationPreset } from '../utils/mockNetworkData';
@@ -26,6 +37,11 @@ export default function Home() {
   const [selectedDevice, setSelectedDevice] = useState<NetworkDevice | null>(null);
   const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState<boolean>(false);
   const [isAddDeviceOpen, setIsAddDeviceOpen] = useState<boolean>(false);
+  const [isMakassarModalOpen, setIsMakassarModalOpen] = useState<boolean>(false);
+
+  // Status Live Network Makassar
+  const [isLiveMakassar, setIsLiveMakassar] = useState<boolean>(false);
+  const [isLoadingLive, setIsLoadingLive] = useState<boolean>(false);
 
   // Live telemetry streaming history state
   const [historyData, setHistoryData] = useState<
@@ -47,6 +63,44 @@ export default function Home() {
     if (newAlerts.length > 0) {
       setAlerts((prev) => [...newAlerts, ...prev]);
     }
+  };
+
+  // Muat Data Live Jaringan Makassar dari Router Tenda / ARP Scanner
+  const handleLoadMakassarLive = async () => {
+    setIsLoadingLive(true);
+    audioHUD.playClick();
+    try {
+      const res = await fetch('/api/tenda');
+      const data = await res.json();
+      if (data.success && data.devices && data.devices.length > 0) {
+        setDevices(data.devices);
+        setIsLiveMakassar(true);
+        audioHUD.playSuccess();
+        setAlerts((prev) => [
+          {
+            id: `alert-makassar-${Date.now()}`,
+            deviceId: data.devices[0].id,
+            deviceName: 'Router Tenda Makassar',
+            severity: 'INFO',
+            message: `Mode Live Makassar Aktif! Terhubung ke Gateway 192.168.0.1 (${data.dataSource})`,
+            metric: '192.168.0.1 (Tenda)',
+            timestamp: new Date().toLocaleTimeString('id-ID'),
+            resolved: false,
+          },
+          ...prev,
+        ]);
+      }
+    } catch (err) {
+      console.error('Failed to load Makassar live network:', err);
+    } finally {
+      setIsLoadingLive(false);
+    }
+  };
+
+  const handleResetToSimulation = () => {
+    audioHUD.playClick();
+    setDevices(INITIAL_DEVICES);
+    setIsLiveMakassar(false);
   };
 
   // Real-time telemetry tick loop
@@ -84,7 +138,7 @@ export default function Home() {
       setHistoryData((prev) => {
         const totalDown = devices.reduce((s, dev) => s + dev.downloadMbps, 0);
         const totalUp = devices.reduce((s, dev) => s + dev.uploadMbps, 0);
-        const avgPing = Math.round(devices.reduce((s, dev) => s + dev.pingMs, 0) / devices.length);
+        const avgPing = Math.round(devices.reduce((s, dev) => s + dev.pingMs, 0) / (devices.length || 1));
 
         const newSlice = [
           ...prev.slice(1),
@@ -182,6 +236,67 @@ export default function Home() {
       {/* Main Container */}
       <main className="max-w-7xl w-full mx-auto px-4 mt-6 flex-1 space-y-6">
         
+        {/* BANNER KONTROL TESTING MAKASSAR ⇄ SURABAYA */}
+        <div className="bg-[#0b081e] p-3.5 rounded-2xl border-2 border-lime-400 shadow-[4px_4px_0_#000] flex flex-col sm:flex-row items-center justify-between gap-3 font-mono">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="p-2 rounded-xl bg-lime-400 text-black border-2 border-black">
+              <MapPin className="w-5 h-5 text-black" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-lime-400 tracking-wide">
+                  PENGUJIAN LOKASI MAKASSAR
+                </span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold ${
+                  isLiveMakassar 
+                    ? 'bg-lime-400 text-black animate-pulse' 
+                    : 'bg-yellow-400 text-black'
+                }`}>
+                  {isLiveMakassar ? 'LIVE TENDA ROUTER AKTIF' : 'MODE SIMULASI LAB'}
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                <Wifi className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Wi-Fi: <strong className="text-white">www.tendawifi.com (192.168.0.1)</strong></span>
+                <span className="text-slate-600">•</span>
+                <span>PC: <strong className="text-yellow-300">192.168.0.243</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+            {isLiveMakassar ? (
+              <button
+                onClick={handleResetToSimulation}
+                className="maxi-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs flex items-center gap-1.5 border border-slate-700"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Simulasi Lab</span>
+              </button>
+            ) : null}
+
+            <button
+              onClick={handleLoadMakassarLive}
+              disabled={isLoadingLive}
+              className="maxi-btn px-3.5 py-1.5 rounded-xl bg-lime-400 text-black hover:bg-lime-300 text-xs font-black flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingLive ? 'animate-spin' : ''}`} />
+              <span>{isLoadingLive ? 'Memindai...' : isLiveMakassar ? 'Segarkan Data Live' : 'Muat Data Riil Makassar'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setIsMakassarModalOpen(true);
+                audioHUD.playClick();
+              }}
+              className="maxi-btn px-3 py-1.5 rounded-xl bg-pink-500 text-white hover:bg-pink-400 text-xs font-bold flex items-center gap-1.5"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Panduan Remote Surabaya</span>
+            </button>
+          </div>
+        </div>
+
         {/* Quick Stats Telemetry Cards */}
         <QuickStatsBanner devices={devices} alerts={alerts} />
 
@@ -248,6 +363,15 @@ export default function Home() {
         isOpen={isAddDeviceOpen}
         onClose={() => setIsAddDeviceOpen(false)}
         onAddDevice={handleAddDevice}
+      />
+
+      <MakassarTestingModal
+        isOpen={isMakassarModalOpen}
+        onClose={() => setIsMakassarModalOpen(false)}
+        onLoadLiveDevices={handleLoadMakassarLive}
+        isLoadingLive={isLoadingLive}
+        isLiveMode={isLiveMakassar}
+        deviceCount={devices.length}
       />
 
       <DeviceDetailDrawer

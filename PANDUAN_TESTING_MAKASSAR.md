@@ -11,73 +11,66 @@ Dokumen ini dibuat untuk memudahkan anggota tim yang berada di **Makassar** dala
 
 ---
 
-## 🚀 METODE 1: TESTING LANGSUNG DI MAKASSAR (SANGAT DIREKOMENDASIKAN)
+## 🚀 METODE 1: TESTING LANGSUNG DI LAPTOP MAKASSAR (SUDAH AKTIF)
 
-Anggota tim di Makassar cukup menjalankan proyek ini di laptopnya sendiri saat terhubung ke Wi-Fi/LAN kantor.
+Laptop di Makassar saat ini telah terhubung ke Wi-Fi Router Tenda kantor:
+- **SSID / DNS Suffix:** `www.tendawifi.com`
+- **Default Gateway (IP Router):** `192.168.0.1`
+- **IP Laptop Makassar:** `192.168.0.243`
+- **MAC Router Tenda:** `b4:0f:3b:ef:25:60`
 
-### **Langkah 1: Persiapan File Proyek di Laptop Makassar**
-1. Terima folder proyek `project_jaringan` dari tim Surabaya (via GitHub / Google Drive / ZIP).
-2. Buka folder `project_jaringan` menggunakan **VS Code** atau Terminal/Command Prompt di laptop Makassar.
+### **Langkah 1: Menjalankan Server Aplikasi**
+Server pengujian Next.js telah dijalankan dan aktif di:
+👉 **`http://localhost:3000`**
 
-### **Langkah 2: Install & Jalankan Aplikasi**
-1. Buka Terminal di VS Code, lalu ketik:
-   ```bash
-   npm install
-   ```
-2. Setelah selesai install, jalankan server pengujian:
-   ```bash
-   npm run dev
-   ```
-3. Aplikasi akan aktif di alamat: `http://localhost:3000`
-
-### **Langkah 3: Menghubungkan ke Wi-Fi / LAN Router Tenda Kantor**
-1. Pastikan Laptop di Makassar terhubung ke **Wi-Fi atau Kabel LAN Router Tenda** kantor magang.
-2. Buka Command Prompt (CMD) di laptop Makassar, ketik:
-   ```cmd
-   ipconfig
-   ```
-3. Catat alamat **Default Gateway** (biasanya `192.168.0.1` atau `192.168.1.1`).
-4. Jika IP Router Tenda di kantor adalah `192.168.0.1`, tidak perlu ubah apa-apa.
-   *(Jika IP Router Tenda beda, misal `192.168.1.1`, buka file `src/app/api/tenda/route.ts` line 10 dan ubah IP-nya).*
-
-### **Langkah 4: Verifikasi Data Wi-Fi Riil Makassar**
+### **Langkah 2: Verifikasi Data Wi-Fi Riil Makassar**
 1. Buka browser di laptop Makassar dan akses:
    👉 **`http://localhost:3000/api/tenda`**
-2. **Hasil Sukses**: Browser akan menampilkan daftar perangkat HP, Laptop, & PC pegawai di kantor Makassar yang sedang aktif terhubung ke router Tenda!
-3. Buka halaman utama:
+2. **Hasil Sukses**: Browser akan mengembalikan JSON riil yang berisi:
+   - `Router Tenda Utama (Makassar)` (IP 192.168.0.1, Ping ~7ms)
+   - `Laptop Tim Penguji Makassar` (IP 192.168.0.243)
+   - `PC / HP Staff Kantor Makassar` (IP 192.168.0.236)
+3. Buka Dashboard Utama di:
    👉 **`http://localhost:3000`**
-4. Tampilan dashboard **NETPULSE MAXIMALIST** akan secara otomatis memvisualisasikan perangkat Wi-Fi riil kantor Makassar pada topologi interaktif!
+4. Di bagian banner atas, klik tombol **"Muat Data Riil Makassar"**.
+5. Dashboard topologi dan seluruh grafik bandwidth akan langsung beralih memvisualisasikan perangkat kantor Makassar secara real-time!
 
 ---
 
-## 🌐 METODE 2: MENINGKATKAN KONEKSI AGAR TIM SURABAYA BISA AKSES ROUTER MAKASSAR (DENGAN NGROK / TAILSCALE)
+## 🌐 METODE 2: MEMBAGIKAN AKSES AGAR TIM SURABAYA BISA MEMBUKA DARI INTERNET
 
-Jika tim di **Surabaya** ingin bisa mengakses data Router Tenda di Makassar secara langsung dari jarak jauh lewat internet:
+Jika tim di **Surabaya** ingin membuka dashboard monitoring ini dari laptop mereka di Surabaya:
 
-### **Opsi A: Menggunakan Ngrok (Tanpa Setting Router)**
-1. Anggota tim di Makassar menginstall **Ngrok** (gratis di [ngrok.com](https://ngrok.com)).
-2. Di laptop Makassar (saat `npm run dev` aktif), ketik di terminal:
-   ```bash
-   ngrok http 3000
-   ```
-3. Ngrok akan memberikan URL Publik (Contoh: `https://abcd-123.ngrok-free.app`).
-4. Anggota tim di Makassar mengirimkan URL tersebut ke tim di **Surabaya**.
-5. Tim di Surabaya dapat membuka URL Ngrok tersebut di browser Surabaya dan melihat monitoring Wi-Fi kantor Makassar secara **Real-time dari jarak jauh**!
+### **Opsi A: Menggunakan Cloudflare Tunnel (PALING DIREKOMENDASIKAN — Tanpa Password & Langsung Buka)**
+Perintah yang sedang berjalan di laptop Makassar saat ini:
+```bash
+npx -y cloudflared tunnel --url http://localhost:3000
+```
+- Cloudflare akan langsung memberikan URL publik resmi berakhiran `.trycloudflare.com`.
+- **Kelebihan:** Tim di Surabaya tinggal klik link tersebut dan dashboard **langsung terbuka** (tanpa perlu mengisi password IP, tanpa akun, dan koneksi HTTPS aman).
 
-### **Opsi B: Menggunakan Tailscale / Mesh Network**
-1. Anggota tim Surabaya & Makassar menginstall aplikasi gratis **Tailscale** di laptop masing-masing.
-2. Kedua laptop dihubungkan dalam satu jaringan virtual private Tailscale.
-3. Tim di Surabaya bisa mengakses `http://[IP-Tailscale-Makassar]:3000` kapan saja!
+### **Opsi B: Menggunakan LocalTunnel**
+```bash
+npx -y localtunnel --port 3000
+```
+*(Catatan: Jika memakai LocalTunnel, saat pertama kali dibuka akan meminta Tunnel Password, yaitu IP Publik Makassar: `125.162.211.76`).*
+
+### **Opsi C: Menggunakan Ngrok via NPX**
+```bash
+npx -y ngrok http 3000
+```
+*(Catatan: Memerlukan pendaftaran akun gratis di ngrok.com untuk authtoken).*
 
 ---
 
 ## 📸 CHECKLIST BUKTI PENGUJIAN UNTUK DOKUMEN LAPORAN MAGANG / SIDANG
 
 Anggota tim di Makassar diharapkan melakukan tangkapan layar (screenshot) sebagai bukti pengerjaan:
-- [ ] Screenshot halaman `http://localhost:3000/api/tenda` yang berisi JSON perangkat Wi-Fi kantor.
-- [ ] Screenshot Dashboard Topologi `http://localhost:3000` yang menampilkan nama-nama perangkat kantor Makassar.
-- [ ] Screenshot hasil **Tes Diagnostik** & **Speedtest Latensi**.
-- [ ] Video rekaman singkat layar (layar bergerak saat perangkat HP terhubung/terputus dari Wi-Fi kantor).
+- [x] Terhubung ke Router Tenda kantor Makassar (`192.168.0.1` / `www.tendawifi.com`).
+- [ ] Buka dan screenshot respons JSON di browser: `http://localhost:3000/api/tenda`.
+- [ ] Screenshot Dashboard Topologi `http://localhost:3000` saat tombol **"Muat Data Riil Makassar"** aktif.
+- [ ] Jalankan tombol **TES DIAGNOSTIK** pada header dan screenshot hasil ping router & speedtest.
+- [ ] Rekam video singkat interaksi dashboard saat mengaktifkan QoS / Limit Bandwidth pada perangkat.
 
 ---
-*Dokumen ini dibuat secara otomatis untuk Kelompok 1 - Perancangan Aplikasi Monitoring Jaringan Kantor Magang.*
+*Dokumen ini diperbarui untuk Kelompok 1 - Perancangan Aplikasi Monitoring Jaringan Kantor Tempat Magang (Makassar ⇄ Surabaya).*
